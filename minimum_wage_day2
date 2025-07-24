@@ -1,0 +1,89 @@
+sqlite> CREATE TABLE minimum_wage (
+(x1...> year INTEGER,
+(x1...> age_group TEXT,
+(x1...> rate_type TEXT,
+(x1...> hourly_rate REAL
+(x1...> );
+sqlite> INSERT INTO minimum_wage VALUES
+   ...> (2020, 'All', 'Adult', 18.90),
+   ...> (2020, '16-17', 'Starting Out', 15.12),
+   ...> (2020, '16-19', 'Training', 15.12),
+   ...> (2021, 'All', 'Adult', 20.00),
+   ...> (2021, '16-17', 'Starting Out', 16.00),
+   ...> (2021, '16-19', 'Training', 16.00),
+   ...> (2022, 'All', 'Adult', 21.20),
+   ...> (2022, '16-17', 'Starting Out', 16.96),
+   ...> (2022, '16-19', 'Training', 16.96),
+   ...> (2023, 'All', 'Adult', 22.70),
+   ...> (2023, '16-17', 'Starting Out', 18.16),
+   ...> (2023, '16-19', 'Training', 18.16),
+   ...> (2024, 'All', 'Adult', 23.15),
+   ...> (2024, '16-17', 'Starting Out', 18.52),
+   ...> (2024, '16-19', 'Training', 18.52);
+sqlite> SELECT
+   ...> ((MAX(hourly_rate) - MIN(hourly_rate)) / MIN(hourly_rate)) * 100 AS percent_increase
+   ...> FROM minimum_wage
+   ...> WHERE rate_type = 'Adult';
+22.4867724867725
+sqlite> SELECT MAX(year) AS year, hourly_rate
+   ...> FROM minimum_wage
+   ...> WHERE rate_type = 'Adult'
+   ...> ;
+2024|23.15
+sqlite> SELECT MIN(year) AS year, hourly_rate
+   ...> FROM minimum_wage
+   ...> WHERE rate_type = 'Adult';
+2020|18.9
+sqlite> SELECT year, hourly_rate
+   ...> FROM minimum_wage
+   ...> WHERE rate_type = 'Adult'
+   ...> ;
+2020|18.9
+2021|20.0
+2022|21.2
+2023|22.7
+2024|23.15
+sqlite> WITH rate_changes AS (
+(x1...> SELECT
+(x1...> rate_type,
+(x1...> MAX(CASE WHEN year = 2020 THEN hourly_rate END) AS rate_2020,
+(x1...> MAX(CASE WHEN year = 2024 THEN hourly_rate END) AS rate_2024
+(x1...> FROM minimum_wage
+(x1...> GROUP BY rate_type
+(x1...> )
+   ...> SELECT
+   ...> rate_type,
+   ...> rate_2020,
+   ...> rate_2024,
+   ...> ROUND(((rate_2024 - rate_2020) / rate_2020) * 100, 2) AS percent_increase
+   ...> FROM rate_changes
+   ...> ORDER BY percent_increase DESC;
+Adult|18.9|23.15|22.49
+Starting Out|15.12|18.52|22.49
+Training|15.12|18.52|22.49
+sqlite> SELECT year, ROUND(AVG(hourly_rate), 2) AS avg_rate
+   ...> FROM minimum_wage
+   ...> GROUP BY year
+   ...> ORDER BY year;
+2020|16.38
+2021|17.33
+2022|18.37
+2023|19.67
+2024|20.06
+sqlite> WITH adult_wage AS (
+(x1...> SELECT year, hourly_rate
+(x1...> FROM minimum_wage
+(x1...> WHERE rate_type = 'Adult'
+(x1...> )
+   ...> SELECT
+   ...> a.year,
+   ...> a.hourly_rate,
+   ...> ROUND(a.hourly_rate - b.hourly_rate, 2) AS delta
+   ...> FROM adult_wage a
+   ...> JOIN adult_wage b ON a.year = b.year + 1
+   ...> ORDER BY a.year;
+2021|20.0|1.1
+2022|21.2|1.2
+2023|22.7|1.5
+2024|23.15|0.45
+sqlite>
